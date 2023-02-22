@@ -1,0 +1,60 @@
+pm.variables.set("timestamp", Date.now());
+pm.variables.set("signature", '');
+
+var signatureStatement ='';
+
+if(pm.request.headers.get('signature') != undefined){
+    console.log("query section")
+   pm.request.url.query.each(function (p){ 
+        if  (p.key!='signature'&& p.key!='Connection'&& p.key!='Accept'&& p.key!='Content-Type'&& p.key!='x-mbx-apikey'){
+            if(p.key=='timestamp')
+            {
+                signatureStatement+= p.key + "=" + pm.variables.get('timestamp');
+            } else {
+            signatureStatement += p.key + "=" + p.value
+            } 
+            signatureStatement+="&";
+        }
+    }) 
+}
+else if(pm.request.body.raw != undefined){
+    console.log("json section") 
+const requestJson = JSON.parse(pm.request.body.raw); 
+    for (const [key, value] of Object.entries(requestJson)) {
+        if(key!='signature'){
+
+            if(key=='timestamp') {
+                signatureStatement += key + "=" + pm.variables.get('timestamp');
+            } else {
+                signatureStatement += key + "=" + requestJson[key];
+            }
+            signatureStatement = signatureStatement + "&";
+        }
+    }
+} else {
+        console.log("ulencoded section")
+    pm.request.body.urlencoded.each(function (p){ 
+        if  (p.key!='signature'){
+            if(p.key=='timestamp')
+            {
+                signatureStatement+= p.key + "=" + pm.variables.get('timestamp');
+            } else {
+            signatureStatement += p.key + "=" + p.value
+            }
+            signatureStatement += "&"
+        }
+    })
+}
+signatureStatement=signatureStatement.slice(0,-1) 
+ 
+console.log('signatureStatement:'+signatureStatement)
+
+apiPrivateKey='PRIVATE_KEY';
+var sig = CryptoJS.HmacSHA256(signatureStatement, apiPrivateKey);
+
+var sigHash = CryptoJS.enc.Hex.stringify(sig).toString();
+ 
+pm.variables.set("signature", sigHash);
+
+
+
