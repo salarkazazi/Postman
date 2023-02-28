@@ -3,7 +3,7 @@ pm.variables.set("signature", '');
 
 var signatureStatement ='';
 
-if(pm.request.headers.get('signature') != undefined){
+if(pm.request.headers.get('signature') != undefined || pm.request.url.query.get('signature')){
     console.log("query section")
    pm.request.url.query.each(function (p){ 
         if  (p.key!='signature'&& p.key!='Connection'&& p.key!='Accept'&& p.key!='Content-Type'&& p.key!='x-mbx-apikey'){
@@ -18,7 +18,17 @@ if(pm.request.headers.get('signature') != undefined){
     }) 
 }
 else if(pm.request.body.raw != undefined){
-    console.log("json section") 
+    console.log("json section")
+// {
+//     "quoteOrderQty":"50",
+//     "recvWindow":"5000",
+//     "side":"BUY",
+//     "symbol":"BTCUSDT",
+//     "timestamp":{{timestamp}},
+//     "signature":"{{signature}}",
+//     "type":"MARKET"
+// }
+
 const requestJson = JSON.parse(pm.request.body.raw); 
     for (const [key, value] of Object.entries(requestJson)) {
         if(key!='signature'){
@@ -46,15 +56,13 @@ const requestJson = JSON.parse(pm.request.body.raw);
     })
 }
 signatureStatement=signatureStatement.slice(0,-1) 
- 
+
+// signatureStatement ='quoteOrderQty=50&recvWindow=5000&side=BUY&symbol=BTCUSDT&timestamp='+pm.variables.get("timestamp")+'&type=MARKET'
 console.log('signatureStatement:'+signatureStatement)
 
-apiPrivateKey='PRIVATE_KEY';
+apiPrivateKey='rD8VP98IbaFrjdQXsZseWYeUsHT3elBFi9A3fnhHNoafyJiCdsfwfWrpOzviEp7f';
 var sig = CryptoJS.HmacSHA256(signatureStatement, apiPrivateKey);
 
 var sigHash = CryptoJS.enc.Hex.stringify(sig).toString();
  
 pm.variables.set("signature", sigHash);
-
-
-
